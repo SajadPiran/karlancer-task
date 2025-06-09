@@ -1,8 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithPopup , GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithPopup , GoogleAuthProvider ,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 document.addEventListener('DOMContentLoaded' , ()=>{
 
+    function $( selector ){
+        const elements = document.querySelectorAll(selector);
+        if( elements.length == 1 ) return elements[0]
+        else return elements
+    }
     const firebaseConfig = {
     apiKey: "AIzaSyA1Mz56lgEctWCkFKpx_rJabIQa2ISCTXo",
     authDomain: "karlancertask.firebaseapp.com",
@@ -13,11 +18,23 @@ document.addEventListener('DOMContentLoaded' , ()=>{
     measurementId: "G-EV2FBY3DL5"
     };
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app)
 
+    const chatForm = $("#chatForm");
+    const chatInput = $("#chatInput");
+    const chatBox = $("#chatBox");
+    const loginContainer = $('#login');
+    
+    onAuthStateChanged( auth, (user) => {
 
-    const chatForm = document.getElementById("chatForm");
-    const chatInput = document.getElementById("chatInput");
-    const chatBox = document.getElementById("chatBox");
+        if (user) loginContainer.style.display = 'none';
+        else {
+            $('#login #loader').style.display = 'none';
+            $('#login #login-form').style.display = 'flex';
+
+            $('#login #login-form-button').addEventListener( 'click' , ()=> signInWithPopup( auth , new GoogleAuthProvider() ) );
+        }
+    });
 
     function createMessage(text, fromUser = true) {
 
@@ -32,7 +49,6 @@ document.addEventListener('DOMContentLoaded' , ()=>{
       chatBox.scrollTop = chatBox.scrollHeight;
 
     }
-
     chatForm.addEventListener("submit", function (e) {
       e.preventDefault();
       const message = chatInput.value.trim();
