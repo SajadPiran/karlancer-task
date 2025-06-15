@@ -5,17 +5,17 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore , collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore , collection, addDoc , getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
   const firebaseConfig = {
-    apiKey: "AIzaSyA1Mz56lgEctWCkFKpx_rJabIQa2ISCTXo",
-    authDomain: "karlancertask.firebaseapp.com",
-    projectId: "karlancertask",
-    storageBucket: "karlancertask.appspot.com",
-    messagingSenderId: "44281313519",
-    appId: "1:44281313519:web:67e4237468e935f9b6431a",
+    apiKey: "AIzaSyDvWdD9yTHlOds3kvAIkTCTFh1S7Xg_7NA",
+    authDomain: "karlancertask-af4c8.firebaseapp.com",
+    projectId: "karlancertask-af4c8",
+    storageBucket: "karlancertask-af4c8.firebasestorage.app",
+    messagingSenderId: "995971703141",
+    appId: "1:995971703141:web:cabb32bf0707a481c9c18c",
     measurementId: "G-EV2FBY3DL5",
   };
   const app = initializeApp(firebaseConfig);
@@ -34,30 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginContainer = $("#login");
   let id;
 
-  onAuthStateChanged(auth, (user) => {
-    if (user){
-      loginContainer.style.display = "none";
-      id = user.uid;
-    }
-    else {
-      $("#login #loader").style.display = "none";
-      $("#login #login-form").style.display = "flex";
-
-      $("#login #login-form-button").addEventListener("click", () =>
-        signInWithPopup(auth, new GoogleAuthProvider())
-      );
-    }
-  });
-  async function saveUserData( data ) {
-
-    try {
-      await addDoc( collection( db , 'user_messages' ) , data );
-    } catch (e) {
-      console.error("خطا در ذخیره داده:", e);
-    }
-
-  }
-
   function createMessage(text, fromUser = true) {
     const bubble = document.createElement("div");
     bubble.className =
@@ -69,12 +45,46 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBox.appendChild(bubble);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
+  
+  onAuthStateChanged( auth, async (user) => {
+    if (user){
+      const querySnapshot = await getDocs(collection(db, "user_messages"));
+      loginContainer.style.display = "none";
+      id = user.uid;
+      const messages = querySnapshot.docs.map( doc => ( {...doc.data()} ) );
+      messages.forEach( (message) =>{
+        if( message.user_id == id ){
+          createMessage(message.message_text)
+          createMessage(message.response_text,false)
+        }
+      });
+
+    }
+    else {
+      $("#login #loader").style.display = "none";
+      $("#login #login-form").style.display = "flex";
+
+      $("#login #login-form-button").addEventListener("click", () =>
+        signInWithPopup(auth, new GoogleAuthProvider())
+      );
+    }
+  });
+
+  async function saveUserData( data ) {
+
+    try {
+      await addDoc( collection( db , 'user_messages' ) , data );
+    } catch (e) {
+      console.error("خطا در ذخیره داده:", e);
+    }
+
+  }
+
 
   async function getChatGptResponse( prompt ){
     
     const headers = {
-      'Authorization' : 'Bearer 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',
-      'Content-Type' : 'application/json'
+
     }
     const body = {
       'model' : 'gpt-4o-mini',
@@ -102,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
       getChatGptResponse(message).then( ( response ) => {
         
         createMessage(response,false);
-
         saveUserData({
           'message_text' : message,
           'response_text' : response,
